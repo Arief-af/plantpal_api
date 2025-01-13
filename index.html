@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Client</title>
+</head>
+<body>
+    <h1>Data DHT Real-Time</h1>
+    <div id="data">
+        <p>Temperature: <span id="temperature">--</span> °C</p>
+        <p>Humidity: <span id="humidity">--</span> %</p>
+        <p>Lux: <span id="lux">--</span> lx</p>
+    </div>
+
+    <script>
+        // Ganti ws://localhost:8080 sesuai dengan alamat WebSocket server Anda
+        const ws = new WebSocket('ws://localhost:8080');
+
+        // Event yang dijalankan saat koneksi terbuka
+        ws.onopen = () => {
+            console.log('Terhubung ke WebSocket server');
+        };
+
+        // Event yang dijalankan saat pesan diterima dari server
+        ws.onmessage = (event) => {
+            console.log('Data diterima:', event.data);
+            
+            // Parsing data JSON yang diterima
+            const data = JSON.parse(event.data);
+
+            // Menampilkan data di halaman HTML
+            document.getElementById('temperature').textContent = data.temperature;
+            document.getElementById('humidity').textContent = data.humidity;
+            document.getElementById('lux').textContent = data.lux;
+        };
+
+        // Event yang dijalankan saat koneksi WebSocket ditutup
+        ws.onclose = () => {
+            console.log('Koneksi WebSocket ditutup');
+        };
+
+        // Event yang dijalankan jika terjadi error
+        ws.onerror = (error) => {
+            console.error('Error pada WebSocket:', error);
+        };
+    </script>
+</body>
+</html>
