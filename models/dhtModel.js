@@ -32,48 +32,50 @@ const DhtModel = {
 
     getChartData: (callback) => {
         const query = `
-        SELECT 
-            DAYOFWEEK(dht.created_at) AS day_of_week,
-            AVG(dht.temperature) AS rata_suhu,
-            AVG(dht.humidity) AS rata_humid,
-            AVG(soil.soil_moisture) AS rata_soil
-        FROM dht_readings dht
-        LEFT JOIN soil_readings soil ON DATE(dht.created_at) = DATE(soil.created_at)
-        GROUP BY day_of_week
-        ORDER BY day_of_week;
-    `;
-    db.execute(query, (err, result) => {
-        if (err) {
-            console.error("Error executing query:", err);  // Log error
-            callback(err, null);
-        } else {
-            // Menyusun array berdasarkan hari dalam seminggu
-            const daysOfWeek = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-            const labels = daysOfWeek.slice(1);  // Mengambil hanya Senin hingga Minggu
-            const suhu = [];
-            const kelembapan = [];
-            const soil = [];
-
-            // Mendapatkan data per hari
-            result.forEach(row => {
-                const dayIndex = row.day_of_week;  // Day of the week berdasarkan SQL (1 = Senin, ..., 7 = Minggu)
-                suhu[dayIndex - 1] = parseFloat(row.rata_suhu.toFixed(2));  // Menyimpan suhu
-                kelembapan[dayIndex - 1] = parseFloat(row.rata_humid.toFixed(2));  // Menyimpan kelembapan
-                soil[dayIndex - 1] = parseFloat(row.rata_soil.toFixed(2));  // Menyimpan kelembapan tanah
-            });
-
-            // Menyusun hasil akhir
-            const formattedResult = {
-                label: labels,
-                soil: soil,
-                suhu: suhu,
-                kelembapan: kelembapan,
-            };
-
-            callback(null, formattedResult);
-        }
-    });
+            SELECT 
+                DAYOFWEEK(dht.created_at) AS day_of_week,
+                AVG(dht.temperature) AS rata_suhu,
+                AVG(dht.humidity) AS rata_humid,
+                AVG(soil.soil_moisture) AS rata_soil
+            FROM dht_readings dht
+            LEFT JOIN soil_readings soil ON DATE(dht.created_at) = DATE(soil.created_at)
+            GROUP BY day_of_week
+            ORDER BY day_of_week;
+        `;
+        db.execute(query, (err, result) => {
+            if (err) {
+                console.error("Error executing query:", err); // Log error
+                callback(err, null);
+            } else {
+                // Hari dalam seminggu dimulai dari Minggu hingga Sabtu
+                const daysOfWeek = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+                
+                // Inisialisasi array untuk hasil
+                const suhu = Array(7).fill(null); // Isi awal dengan null
+                const kelembapan = Array(7).fill(null); // Isi awal dengan null
+                const soil = Array(7).fill(null); // Isi awal dengan null
+    
+                // Memetakan hasil query ke array
+                result.forEach(row => {
+                    const dayIndex = row.day_of_week - 1; // DAYOFWEEK: 1 = Minggu, ..., 7 = Sabtu
+                    suhu[dayIndex] = row.rata_suhu ? parseFloat(row.rata_suhu.toFixed(2)) : null;
+                    kelembapan[dayIndex] = row.rata_humid ? parseFloat(row.rata_humid.toFixed(2)) : null;
+                    soil[dayIndex] = row.rata_soil ? parseFloat(row.rata_soil.toFixed(2)) : null;
+                });
+    
+                // Hasil akhir dalam format yang diminta
+                const formattedResult = {
+                    label: daysOfWeek,
+                    suhu: suhu,
+                    kelembapan: kelembapan,
+                    soil: soil,
+                };
+    
+                callback(null, formattedResult);
+            }
+        });
     },
+    
     
 
     getAllData: (callback) => {
